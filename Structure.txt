@@ -1,0 +1,15 @@
+Models to use:
+LASSO regression
+Linear regression
+Random forest
+SVM
+Neural Networks:
+Multilayer neural Network
+CNN
+GNN
+
+---
+Feature selection
+
+
+
