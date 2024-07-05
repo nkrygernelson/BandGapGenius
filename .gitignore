@@ -1,3 +1,4 @@
-Structure.txt
-test.py
-__pycache__/s
+v1/Structure.txt
+v1/test.py
+__pycache__/
+v2/models/*
