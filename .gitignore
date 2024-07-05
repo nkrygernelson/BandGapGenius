@@ -2,3 +2,4 @@ v1/Structure.txt
 v1/test.py
 __pycache__/
 v2/models/*
+v2/figures/ternary_plots_fe/*
