@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 
-prop = "FE"
+prop = "band_gap"
 
 
 from sklearn.model_selection import train_test_split
@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 RNG_SEED = 42
 np.random.seed(seed=RNG_SEED)
 PATH = os.getcwd()
-data_path = PATH+"/v2/data/big_data_training/train.csv"
+data_path = PATH+"/v2/data/big_data_training/BG_train.csv"
 
 df = pd.read_csv(data_path)
 print(f'Full DataFrame shape: {df.shape}')
@@ -88,9 +88,9 @@ print(f'# of common formulae in intersection 3: {len(common_formulae3)}; common 
 
 PATH = os.getcwd()
 
-train_path =  PATH+"/v2/data/fe_train.csv"
-val_path = PATH+"/v2/data/fe_val.csv"
-test_path = PATH+"/v2/data/fe_test.csv"
+train_path =  PATH+"/v2/data/bg_train.csv"
+val_path = PATH+"/v2/data/bg_val.csv"
+test_path = PATH+"/v2/data/bg_test.csv"
 
 df_train.to_csv(train_path, index=False)
 df_val.to_csv(val_path, index=False)

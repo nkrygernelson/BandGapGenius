@@ -10,7 +10,7 @@ elements = ["Ag","Al","Au","B","Ba","Bi","Ca","Cd","Co","Cr","Cs","Cu","Fe","Ga"
 for element in elements:
     Fl = []
     #import ternary data as csv
-    ternary_data = pd.read_csv(PATH+f'/v2/data/ternary/ternary_data_{element}.csv')
+    ternary_data = pd.read_csv(PATH+f'/v2/data/ternary/big_MP/ternary_data_{element}.csv')
     #we want to convert the data into a list of PDEntry objects where the first entry is the composition and the second entry is the energy
     el_list = ternary_data.to_numpy()
     print(el_list)

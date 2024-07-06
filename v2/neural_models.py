@@ -13,12 +13,12 @@ from sklearn.svm import SVR
 from sklearn.svm import LinearSVR
 from tensorflow import keras
 from sklearn import metrics
-prop  = "FE"
+prop  = "band_gap"
 PATH = os.getcwd()
 
-train_path =  PATH+"/v2/data/big_data_training/fe_train.csv"
-val_path = PATH+"/v2/data/big_data_training/fe_val.csv"
-test_path = PATH+"/v2/data/big_data_training/fe_test.csv"
+train_path =  PATH+"/v2/data/big_data_training/bg_train.csv"
+val_path = PATH+"/v2/data/big_data_training/bg_val.csv"
+test_path = PATH+"/v2/data/big_data_training/bg_test.csv"
 
 df_train = pd.read_csv(train_path)
 df_val = pd.read_csv(val_path)
@@ -61,8 +61,10 @@ X_train = normalize(X_train)
 X_val = normalize(X_val)
 X_test = normalize(X_test)
 
+
+
 #save the scaler
-joblib.dump(scaler, 'v2/models/fe_scaler.pkl')
+joblib.dump(scaler, PATH+'/v2/models/fe_scaler.pkl')
 
 
 
@@ -91,7 +93,7 @@ history = model.fit(
     validation_split=0.2
 )
 #save the model
-model.save('v2/models/fe_big_data_nn_model.h5')
+model.save('v2/models/fe_big_data_nn_model.keras')
 # Plot the training and validation loss
 plt.plot(history.history['loss'], label='Training loss')
 plt.plot(history.history['val_loss'], label='Validation loss')
@@ -100,22 +102,36 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
 plt.show()
+plt.savefig(PATH+f'/v2/figures/Neural_Network__bg_train_val_loss.png')
 
 # Predict the band gaps of the test data
-Y_pred = model.predict(X_test)
-print("length y_pred")
-print(len(Y_pred))
-# Plot the predicted band gaps against the actual band gaps
-plt.scatter(y_test, Y_pred)
-#plot the line y = x
-plt.plot(np.linspace(-8, 3,100), np.linspace(-8, 3,100), color='red')
-plt.xlabel('Actual Formation Energy')
-plt.ylabel('Predicted Formation Energy')
-plt.title('Actual Formation Energy vs Predicted Formation Energy')
-plt.show()
-metric_mat = []
-metric_mat.append(metrics.r2_score(y_test, Y_pred))
-metric_mat.append(metrics.mean_absolute_error(y_test,Y_pred))
+#load the model 
+model = keras.models.load_model('v2/models/fe_big_data_nn_model.keras')
+
+label = "band_gap"
+Y_pred = model.predict(X_test).reshape(-1)
+xy_max = np.max([np.max(y_test), np.max(Y_pred)])
+xy_min = np.min([np.min(y_test), np.min(Y_pred)])
+
+plot = plt.figure(figsize=(6,6))
+plt.plot(y_test, Y_pred, 'o', ms=9, mec='k', mfc='silver', alpha=0.4)
+plt.plot([xy_min, xy_max], [xy_min, xy_max], 'k--', label='ideal')
+
+polyfit = np.polyfit(y_test, Y_pred, deg=1)
+reg_ys = np.poly1d(polyfit)(np.unique(y_test))
+plt.plot(np.unique(y_test), reg_ys, alpha=0.8, label='linear fit')
+plt.axis('scaled')
+plt.xlabel(f'Actual {label}')
+plt.ylabel(f'Predicted {label}')
+plt.title(f'Neural Network, r2: {metrics.r2_score(y_test, Y_pred):0.4f}')
+plt.legend(loc='upper left')
+plt.savefig(PATH+f'/v2/figures/Neural_Network_pred_act.png')
+
+print("Metrics")
+print(f"r2: {metrics.r2_score(y_test, Y_pred)}")
+print(f"MAE: {metrics.mean_absolute_error(y_test, Y_pred)}")
+print(f"MSE: {metrics.mean_squared_error(y_test, Y_pred)}")
+
 
 
 ''' 

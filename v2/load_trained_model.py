@@ -70,19 +70,14 @@ X_train = normalize(X_train)
 X_val = normalize(X_val)
 X_test = normalize(X_test)
 
-#save the scaler
-joblib.dump(scaler, 'v2/models/fe_scaler.pkl')
 
-def instantiate_model(model_name):
-    model = model_name()
+# Instantiate the model again using the parameters
+#load a model from the models folder
+def load_model(model_name):
+    model = joblib.load(f'v2/models/{model_name}.pkl')
     return model
 
-def fit_model(model, X_train, y_train):
-    ti = time()
-    model = instantiate_model(model)
-    model.fit(X_train, y_train)
-    fit_time = time() - ti
-    return model, fit_time
+
 
 def evaluate_model(model, X, y_act):
     y_pred = model.predict(X)
@@ -90,33 +85,6 @@ def evaluate_model(model, X, y_act):
     mae = mean_absolute_error(y_act, y_pred)
     rmse_val = mean_squared_error(y_act, y_pred, squared=False)
     return r2, mae, rmse_val
-
-def fit_evaluate_model(model, model_name, X_train, y_train, X_val, y_act_val):
-    model, fit_time = fit_model(model, X_train, y_train)
-    r2_train, mae_train, rmse_train = evaluate_model(model, X_train, y_train)
-    r2_val, mae_val, rmse_val = evaluate_model(model, X_val, y_act_val)
-    result_dict = {
-        'model_name': model_name,
-        'model_name_pretty': type(model).__name__,
-        'model_params': model.get_params(),
-        'fit_time': fit_time,
-        'r2_train': r2_train,
-        'mae_train': mae_train,
-        'rmse_train': rmse_train,
-        'r2_val': r2_val,
-        'mae_val': mae_val,
-        'rmse_val': rmse_val}
-    return model, result_dict
-
-def append_result_df(df, result_dict):
-    df_result_appended = df._append(result_dict, ignore_index=True)
-    return df_result_appended
-
-def append_model_dict(dic, model_name, model):
-    dic[model_name] = model
-    return dic
-def save_model(model, model_name):
-    joblib.dump(model, f'v2/models/BG/{model_name}.pkl')
 def plot_pred_act(act, pred, model, reg_line=True, label=''):
     xy_max = np.max([np.max(act), np.max(pred)])
     xy_min = np.min([np.min(act), np.min(pred)])
@@ -133,85 +101,11 @@ def plot_pred_act(act, pred, model, reg_line=True, label=''):
     plt.ylabel(f'Predicted {label}')
     plt.title(f'{type(model).__name__}, r2: {r2_score(act, pred):0.4f}')
     plt.legend(loc='upper left')
-    plt.savefig(f'v2/figures/{type(model).__name__}_pred_act.png')
+    plt.savefig(f'v2/figures/BEST_{type(model).__name__}_pred_act.png')
     
     return plot
 
-
-df_classics = pd.DataFrame(columns=['model_name',
-                                    'model_name_pretty',
-                                    'model_params',
-                                    'fit_time',
-                                    'r2_train',
-                                    'mae_train',
-                                    'rmse_train',
-                                    'r2_val',
-                                    'mae_val',
-                                    'rmse_val'])
-
-classic_model_names = OrderedDict({
-    'dumr': DummyRegressor,
-    'rr': Ridge,
-    'abr': AdaBoostRegressor,
-    'gbr': GradientBoostingRegressor,
-    'rfr': RandomForestRegressor,
-    'etr': ExtraTreesRegressor,
-    'svr': SVR,
-    'lsvr': LinearSVR,
-    'knr': KNeighborsRegressor,
-    'rof' : RotationForestRegressor,
-})
-
-classic_models = OrderedDict()
-
-# Keep track of elapsed time
-ti = time()
-
-# Loop through each model type, fit and predict, and evaluate and store results
-for model_name, model in classic_model_names.items():
-    print(f'Now fitting and evaluating model {model_name}: {model.__name__}')
-    model, result_dict = fit_evaluate_model(model, model_name, X_train, y_train, X_val, y_val)
-    df_classics = append_result_df(df_classics, result_dict)
-    classic_models = append_model_dict(classic_models, model_name, model)
-    save_model(model, model_name)
-    plot = plot_pred_act(y_val, model.predict(X_val), model, reg_line=True, label=prop)
-
-dt = time() - ti
-print(f'Finished fitting {len(classic_models)} models, total time: {dt:0.2f} s')
-
-df_classics = df_classics.sort_values('r2_val', ignore_index=True)
-
-for row in range(df_classics.shape[0]):
-    model_name = df_classics.iloc[row]['model_name']
-
-    model = classic_models[model_name]
-    y_act_val = y_val
-    y_pred_val = model.predict(X_val)
-
-    plot = plot_pred_act(y_act_val, y_pred_val, model, reg_line=True, label=prop)
-
-# Find the best-performing model that we have tested
-best_row = df_classics.iloc[-1, :].copy()
-
-# Get the model type and model parameters
-model_name = best_row['model_name']
-model_params = best_row['model_params']
-
-# Instantiate the model again using the parameters
-model = classic_model_names[model_name](**model_params)
-print(model)
-X_train_new = np.concatenate((X_train, X_val), axis=0)
-y_train_new = pd.concat((y_train, y_val), axis=0)
-
-print(X_train_new.shape)
-ti = time()
-
-model.fit(X_train_new, y_train_new)
-save_model(model, f'{model_name}_fe_best_model')
-
-dt = time() - ti
-print(f'Finished fitting best model, total time: {dt:0.2f} s')
-
+model = load_model('svr')
 y_act_test = y_test
 y_pred_test = model.predict(X_test)
 
@@ -221,12 +115,6 @@ print(f'mae: {mae:0.4f}')
 print(f'rmse: {rmse:0.4f}')
 
 plot = plot_pred_act(y_act_test, y_pred_test, model, reg_line=True, label='FE')
-
-import joblib
-joblib.dump(model, 'v2/models/fe_model_big_data.pkl')
-
-
-'''
 
 def check_for_simplifcation(previous_data, ijk):
     for data in previous_data:
@@ -277,8 +165,8 @@ for element in elements:
     y_pred = model.predict(X_test)
     y_pred = y_pred.tolist()
     ternary_data = pd.DataFrame({"formula": formulas, "target": y_pred})
-    ternary_data.to_csv(f"v2/data/ternary/big_data_ternary/ternary_data_{element}.csv", index=False)
+    ternary_data.to_csv(f"v2/data/ternary/big_MP/ternary_data_{element}.csv", index=False)
 
 
 
-'''
+    

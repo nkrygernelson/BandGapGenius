@@ -3,7 +3,7 @@ import pymatgen
 import os
 api_key = 'GPPXFjpPCxMe6U8Uz9CQa4TEhNbaaPCY'
 
-filename_dir = "v2/data/big_data_ternary/train.csv"
+filename_dir = "v2/data/big_data_training/BG_train.csv"
 def write_to_text_file(string):
     #if the file does not exist, create it
     if not os.path.exists(filename_dir):
@@ -38,7 +38,7 @@ def refined_query():
 def big_net():
     exclude_list = [""]
     with MPRester(api_key) as mpr:
-        docs = mpr.materials.summary.search(energy_above_hull=(0,0.2), fields=['formation_energy_per_atom','structure'],  )
+        docs = mpr.materials.summary.search(energy_above_hull=(0,0.2), fields=['band_gap','structure'],  )
         for i in range(len(docs)):
             if i == 1:
                 for k in docs[i]:
@@ -46,7 +46,7 @@ def big_net():
             elements = pymatgen.core.composition.Composition(docs[i].structure.reduced_formula).get_el_amt_dict().keys()
             #we only write the compunds that contain the elements in the include list and do not contain the elements in the exclude list
             if not any(elem in elements for elem in exclude_list):
-                write_to_text_file(str(docs[i].structure.reduced_formula) + ","+ str(docs[i].formation_energy_per_atom) + "\n")
+                write_to_text_file(str(docs[i].structure.reduced_formula) + ","+ str(docs[i].band_gap) + "\n")
 def list_of_combos():
     elements_list = [
     ["P", "S"],
